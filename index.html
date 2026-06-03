@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ASD Robot Traffic Training</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0d1117;
+            font-family: 'Inter', sans-serif;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        :root {
+            --cyan: #00f2fe;
+            --blue: #4facfe;
+            --pink: #ff5a76;
+            --red: #d00000;
+        }
+
+        /* ========================= */
+        /* TOP BAR */
+        /* ========================= */
+
+        .top-dashboard {
+            width: 95%;
+            margin: 15px auto;
+
+            background: #07111f;
+
+            border-radius: 20px;
+
+            padding: 15px 30px;
+
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .session-heading {
+            font-size: 2.3rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .timer-panel {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+
+            background: black;
+
+            padding: 14px 22px;
+
+            border-radius: 20px;
+
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .timer-circle-wrapper {
+            width: 80px;
+            height: 80px;
+            position: relative;
+        }
+
+        .timer-svg {
+            width: 80px;
+            height: 80px;
+            transform: rotate(-90deg);
+        }
+
+        .timer-bg {
+            fill: none;
+            stroke: #222;
+            stroke-width: 8;
+        }
+
+        .timer-progress {
+            fill: none;
+            stroke: var(--cyan);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 264;
+            stroke-dashoffset: 0;
+
+            transition: 1s linear;
+        }
+
+        .timer-text {
+            position: absolute;
+            inset: 0;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .timer-input {
+            width: 80px;
+            height: 45px;
+
+            border-radius: 12px;
+            border: 1px solid #333;
+
+            background: #1a1a1a;
+
+            color: white;
+
+            text-align: center;
+
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .dashboard-btn {
+            border: none;
+            border-radius: 14px;
+
+            padding: 14px 22px;
+
+            font-weight: 800;
+
+            cursor: pointer;
+
+            transition: 0.2s;
+        }
+
+        .dashboard-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .btn-start {
+            background: var(--cyan);
+            color: black;
+        }
+
+        .btn-stop {
+            background: #d62828;
+            color: white;
+        }
+
+        .btn-save {
+            background: white;
+            color: black;
+        }
+
+        .btn-reset {
+            background: #ff4d6d;
+            color: white;
+        }
+
+        /* ========================= */
+        /* MAIN */
+        /* ========================= */
+
+        .main-section {
+            width: 95%;
+            margin: 0 auto;
+            flex: 1;
+
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+        }
+
+        /* ========================= */
+        /* CAMERA */
+        /* ========================= */
+
+        .camera-card {
+            width: 320px;
+        }
+
+        .camera-frame {
+            position: relative;
+
+            width: 100%;
+            height: 240px;
+
+            overflow: hidden;
+
+            border-radius: 20px;
+
+            border: 2px solid var(--blue);
+        }
+
+        .camera-frame video,
+        .camera-frame canvas {
+            position: absolute;
+
+            width: 100%;
+            height: 100%;
+
+            object-fit: cover;
+        }
+
+        .camera-status {
+            background: #081628;
+
+            margin-top: 10px;
+
+            border-radius: 12px;
+
+            padding: 12px;
+
+            text-align: center;
+        }
+
+        .gesture-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+        }
+
+        .gesture-subtitle {
+            opacity: 0.7;
+        }
+
+        /* ========================= */
+        /* TRAFFIC SIGNAL */
+        /* ========================= */
+
+        .traffic-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            gap: 20px;
+        }
+
+        .traffic-layout {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+        }
+
+        .side-light {
+            /* Adjusted for vertical centering */
+        }
+
+        .inside-arrow {
+
+            position: absolute;
+
+            inset: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            font-size: 2.2rem;
+            font-weight: bold;
+
+            color: black;
+
+            opacity: 0;
+
+            transition: 0.2s;
+        }
+
+        .signal.green {
+            position: relative;
+        }
+
+        .signal.green.active-arrow .inside-arrow {
+            opacity: 1;
+        }
+
+        .signal-box {
+            background: black;
+
+            padding: 25px;
+
+            border-radius: 35px;
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 18px;
+        }
+
+        .signal {
+            width: 70px;
+            height: 70px;
+
+            border-radius: 50%;
+
+            background: #222;
+
+            transition: 0.2s;
+        }
+
+        .signal.red.on {
+            background: red;
+            box-shadow: 0 0 25px red;
+        }
+
+        .signal.yellow.on {
+            background: orange;
+            box-shadow: 0 0 25px orange;
+        }
+
+        .signal.green.on {
+            background: #00ff44;
+            box-shadow: 0 0 25px #00ff44;
+        }
+
+        .arrow-row {
+            display: flex;
+            gap: 25px;
+        }
+
+        .direction-light {
+            width: 75px;
+            height: 75px;
+
+            border-radius: 50%;
+
+            background: #222;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-size: 2.5rem;
+            font-weight: bold;
+
+            color: white;
+
+            transition: 0.2s;
+        }
+
+        .direction-light.active {
+            background: #00ff66;
+            color: black;
+
+            box-shadow: 0 0 25px #00ff66;
+        }
+
+        /* ========================= */
+        /* CONTROLS */
+        /* ========================= */
+
+        .control-card {
+            background: linear-gradient(145deg, #07111f, #0c1f38);
+
+            padding: 40px;
+
+            border-radius: 35px;
+
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+            gap: 18px;
+
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .middle-controls {
+            display: flex;
+            gap: 18px;
+        }
+
+        .control-btn {
+            border: none;
+
+            background: #ff5a76;
+
+            color: white;
+
+            padding: 18px 28px;
+
+            border-radius: 18px;
+
+            font-weight: 800;
+
+            font-size: 1rem;
+
+            cursor: pointer;
+
+            box-shadow: 0 0 20px rgba(255, 90, 118, 0.5);
+
+            transition: 0.2s;
+        }
+
+        .control-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .stop-btn {
+            background: var(--red);
+        }
+
+        /* =========================================
+GRAPH SECTION FIX
+REPLACE YOUR OLD GRAPH CSS WITH THIS
+========================================= */
+
+        .graph-wrapper {
+            width: 95%;
+            margin: 15px auto;
+            background: #020b18;
+            border-radius: 24px;
+            padding: 15px 20px;
+            box-sizing: border-box;
+            height: 25vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .graph-title {
+            width: fit-content;
+            padding: 10px 30px;
+            background: #0a1a2d;
+            border-radius: 16px 16px 0 0;
+            font-weight: 700;
+            font-size: 1rem;
+            color: white;
+            margin-left: 10px;
+        }
+
+        .graph-box {
+            position: relative;
+            background: #071425;
+            border-radius: 18px;
+            flex: 1;
+            padding: 20px 20px 35px 70px;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+
+        /* CANVAS */
+
+        #signalGraph {
+            width: 100%;
+            height: 100%;
+            display: block;
+            border-radius: 10px;
+            background: transparent;
+        }
+
+        /* Y AXIS TITLE */
+
+        .y-axis-label {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            transform-origin: left top;
+
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: white;
+
+            letter-spacing: 0.5px;
+        }
+
+        /* X AXIS TITLE */
+
+        .x-axis-label {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: white;
+
+            letter-spacing: 0.5px;
+        }
+
+
+        @media(max-width:1200px) {
+
+            .main-section {
+                flex-direction: column;
+                gap: 40px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ======================= -->
+    <!-- TOP BAR -->
+    <!-- ======================= -->
+
+    <div class="top-dashboard">
+
+        <div class="session-heading">
+            SESSION TIME
+        </div>
+
+        <div class="timer-panel">
+
+            <div class="timer-circle-wrapper">
+
+                <svg class="timer-svg" viewBox="0 0 100 100">
+
+                    <circle class="timer-bg" cx="50" cy="50" r="42">
+                    </circle>
+
+                    <circle id="timerProgress" class="timer-progress" cx="50" cy="50" r="42">
+                    </circle>
+
+                </svg>
+
+                <div id="timerDisplay" class="timer-text">
+                    00:00
+                </div>
+
+            </div>
+
+            <input type="number" id="timerInput" value="60" class="timer-input">
+
+            <button class="dashboard-btn btn-start" onclick="startTimer()">
+                START
+            </button>
+
+            <button class="dashboard-btn btn-stop" onclick="stopTimer()">
+                STOP
+            </button>
+
+            <button class="dashboard-btn btn-save" onclick="saveSession()">
+                SAVE
+            </button>
+
+            <button class="dashboard-btn btn-reset" onclick="resetTimer()">
+                RESET
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- ======================= -->
+    <!-- MAIN -->
+    <!-- ======================= -->
+
+    <div class="main-section">
+
+        <!-- CAMERA -->
+
+        <div class="camera-card">
+
+            <div class="camera-frame">
+
+                <video id="video" autoplay muted playsinline>
+                </video>
+
+                <canvas id="canvas"></canvas>
+
+            </div>
+
+            <div class="camera-status">
+
+                <div id="gestureText" class="gesture-title">
+                    Initializing...
+                </div>
+
+                <div id="status" class="gesture-subtitle">
+                    Loading Camera
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- TRAFFIC SIGNAL -->
+
+        <div class="traffic-container">
+
+            <div class="traffic-layout">
+
+                <!-- LEFT -->
+
+                <div id="left" class="direction-light side-light">
+                    ←
+                </div>
+
+                <!-- CENTER SIGNAL -->
+
+                <div class="signal-box">
+
+                    <div id="red" class="signal red">
+                    </div>
+
+                    <div id="yellow" class="signal yellow">
+                    </div>
+
+                    <div id="green" class="signal green">
+
+                        <span id="forwardArrow" class="inside-arrow">
+                            ↑
+                        </span>
+
+                    </div>
+
+                </div>
+
+                <!-- RIGHT -->
+
+                <div id="right" class="direction-light side-light">
+                    →
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- CONTROLS -->
+
+        <div class="control-card">
+
+            <button class="control-btn" onclick="handleManual('F')">
+                FORWARD
+            </button>
+
+            <div class="middle-controls">
+
+                <button class="control-btn" onclick="handleManual('L')">
+                    LEFT
+                </button>
+
+                <button class="control-btn stop-btn" onclick="handleManual('S')">
+                    STOP
+                </button>
+
+                <button class="control-btn" onclick="handleManual('R')">
+                    RIGHT
+                </button>
+
+            </div>
+
+            <button class="control-btn" onclick="handleManual('B')">
+                BACKWARD
+            </button>
+
+        </div>
+
+    </div>
+
+    <!-- ======================= -->
+    <!-- GRAPH -->
+    <!-- ======================= -->
+
+    <div class="graph-wrapper">
+
+        <div class="graph-title">
+            LIVE SIGNAL HISTORY
+        </div>
+
+        <div class="graph-box">
+
+            <div class="y-axis-label">
+                Gesture Mapping
+            </div>
+
+            <canvas id="signalGraph"></canvas>
+
+            <div class="x-axis-label">
+                Traffic Signal Environment
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- ======================= -->
+    <!-- SCRIPTS -->
+    <!-- ======================= -->
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+
+    <script>
+
+        // ==========================================
+        // ELEMENTS
+        // ==========================================
+
+        const video = document.getElementById("video");
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        const gestureText = document.getElementById("gestureText");
+        const statusDiv = document.getElementById("status");
+
+        const red = document.getElementById("red");
+        const yellow = document.getElementById("yellow");
+        const green = document.getElementById("green");
+
+        const left = document.getElementById("left");
+        const right = document.getElementById("right");
+        const forwardArrow = document.getElementById("forwardArrow");
+
+        const graphCanvas = document.getElementById("signalGraph");
+        const gctx = graphCanvas.getContext("2d");
+
+        const timerDisplay = document.getElementById("timerDisplay");
+        const timerProgress = document.getElementById("timerProgress");
+
+        // ==========================================
+        // VARIABLES
+        // ==========================================
+
+        const ESP32_IP = "192.168.4.1";
+
+        let lastCommand = "";
+
+        let graphData = [];
+        let sessionHistory = [];
+
+        let timerInterval;
+
+        let totalTime = 60;
+        let remainingTime = 60;
+        let timerRunning = false;
+
+        const circumference = 264;
+
+        const commandMap = {
+            "B": 1,
+            "R": 2,
+            "L": 3,
+            "F": 4,
+            "S": 5
+        };
+
+        // ==========================================
+        // RESIZE GRAPH
+        // ==========================================
+
+        function resizeGraph() {
+
+            graphCanvas.width =
+                graphCanvas.clientWidth;
+
+            graphCanvas.height =
+                graphCanvas.clientHeight;
+
+            drawGraph();
+        }
+
+        resizeGraph();
+
+        window.addEventListener("resize", resizeGraph);
+
+        // ==========================================
+        // CAMERA
+        // ==========================================
+
+        async function startCamera() {
+
+            try {
+
+                const stream =
+                    await navigator.mediaDevices.getUserMedia({
+                        video: true,
+                        audio: false
+                    });
+
+                video.srcObject = stream;
+
+                await video.play();
+
+                statusDiv.innerText =
+                    "Camera Connected";
+
+                gestureText.innerText =
+                    "AI Ready";
+
+                startDetection();
+
+            } catch (err) {
+
+                console.log(err);
+
+                statusDiv.innerText =
+                    "Camera Error";
+
+                gestureText.innerText =
+                    err.message;
+            }
+        }
+
+        // ==========================================
+        // MEDIAPIPE
+        // ==========================================
+
+        const hands = new Hands({
+            locateFile: (file) =>
+                `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.6,
+            minTrackingConfidence: 0.6
+        });
+
+        // ==========================================
+        // RESULTS
+        // ==========================================
+
+        hands.onResults((results) => {
+
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            ctx.save();
+
+            ctx.clearRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+
+            ctx.drawImage(
+                results.image,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+
+            if (
+                results.multiHandLandmarks &&
+                results.multiHandLandmarks.length > 0
+            ) {
+
+                const lm =
+                    results.multiHandLandmarks[0];
+
+                drawConnectors(
+                    ctx,
+                    lm,
+                    HAND_CONNECTIONS,
+                    {
+                        color: "#00FFAA",
+                        lineWidth: 3
+                    }
+                );
+
+                drawLandmarks(
+                    ctx,
+                    lm,
+                    {
+                        color: "#FF0055",
+                        radius: 3
+                    }
+                );
+
+                detectGesture(lm);
+
+            } else {
+
+                resetLights();
+
+                gestureText.innerText =
+                    "No Hand";
+            }
+
+            ctx.restore();
+        });
+
+        // ==========================================
+        // GESTURE DETECTION
+        // ==========================================
+
+        function detectGesture(lm) {
+
+            const thumb =
+                lm[4].x < lm[3].x;
+
+            const index =
+                lm[8].y < lm[6].y;
+
+            const middle =
+                lm[12].y < lm[10].y;
+
+            const ring =
+                lm[16].y < lm[14].y;
+
+            const pinky =
+                lm[20].y < lm[18].y;
+
+            const total =
+                [thumb, index, middle, ring, pinky]
+                    .filter(Boolean).length;
+
+            if (total >= 4) {
+                activateSignal("S");
+                return;
+            }
+
+            if (total === 0) {
+                activateSignal("F");
+                return;
+            }
+
+            if (index && total === 1) {
+                activateSignal("L");
+                return;
+            }
+
+            if (pinky && total === 1) {
+                activateSignal("R");
+                return;
+            }
+
+            if (index && middle && total === 2) {
+                activateSignal("B");
+                return;
+            }
+
+            gestureText.innerText =
+                "Unknown";
+        }
+
+        // ==========================================
+        // SIGNALS
+        // ==========================================
+
+        function resetLights() {
+
+            red.classList.remove("on");
+            yellow.classList.remove("on");
+            green.classList.remove("on");
+
+            green.classList.remove("active-arrow");
+
+            left.classList.remove("active");
+            right.classList.remove("active");
+        }
+
+        function activateSignal(cmd) {
+
+            resetLights();
+
+            if (cmd === "S") {
+
+                red.classList.add("on");
+
+                gestureText.innerText =
+                    "STOP";
+            }
+
+            if (cmd === "F") {
+
+                green.classList.add("on");
+                green.classList.add("active-arrow");
+
+                gestureText.innerText =
+                    "FORWARD";
+            }
+
+            if (cmd === "L") {
+
+                left.classList.add("active");
+
+                gestureText.innerText =
+                    "LEFT";
+            }
+
+            if (cmd === "R") {
+
+                right.classList.add("active");
+
+                gestureText.innerText =
+                    "RIGHT";
+            }
+
+            if (cmd === "B") {
+
+                yellow.classList.add("on");
+
+                gestureText.innerText =
+                    "BACKWARD";
+            }
+
+            send(cmd);
+
+            if (timerRunning) {
+                updateGraph(cmd);
+            }
+        }
+
+        // ==========================================
+        // MANUAL
+        // ==========================================
+
+        function handleManual(cmd) {
+            activateSignal(cmd);
+        }
+
+        // ==========================================
+        // ESP32
+        // ==========================================
+
+        function send(cmd) {
+
+            if (cmd === lastCommand)
+                return;
+
+            lastCommand = cmd;
+
+            console.log("Sending:", cmd);
+
+            fetch(`http://${ESP32_IP}/${cmd}`, {
+                mode: "no-cors"
+            })
+                .catch(err => console.log(err));
+        }
+
+        // ==========================================
+        // DETECTION LOOP
+        // ==========================================
+
+        async function startDetection() {
+
+            async function detectFrame() {
+
+                if (video.readyState >= 2) {
+
+                    await hands.send({
+                        image: video
+                    });
+                }
+
+                requestAnimationFrame(detectFrame);
+            }
+
+            detectFrame();
+        }
+
+        // ==========================================
+        // GRAPH
+        // ==========================================
+
+        function updateGraph(cmd) {
+
+            const point = {
+                time: Date.now(),
+                command: cmd,
+                value: commandMap[cmd]
+            };
+
+            graphData.push(point.value);
+
+            sessionHistory.push(point);
+
+            if (graphData.length > 50) {
+                graphData.shift();
+            }
+
+            drawGraph();
+        }
+
+        function drawGraph() {
+
+            const w =
+                graphCanvas.width;
+
+            const h =
+                graphCanvas.height;
+
+            gctx.clearRect(0, 0, w, h);
+
+            // GRID
+
+            gctx.strokeStyle =
+                "rgba(255,255,255,0.08)";
+
+            for (let i = 0; i < 6; i++) {
+
+                let y =
+                    (h / 5) * i;
+
+                gctx.beginPath();
+
+                gctx.moveTo(0, y);
+
+                gctx.lineTo(w, y);
+
+                gctx.stroke();
+            }
+
+            // LABELS
+
+            const labels = [
+                "BACK",
+                "RIGHT",
+                "LEFT",
+                "FORWARD",
+                "STOP"
+            ];
+
+            gctx.fillStyle =
+                "rgba(255,255,255,0.6)";
+
+            gctx.font =
+                "12px Inter";
+
+            labels.forEach((label, i) => {
+
+                const y =
+                    h - ((i + 1) / 5) * h;
+
+                gctx.fillText(label, 10, y - 5);
+            });
+
+            // LINE
+
+            if (graphData.length < 2)
+                return;
+
+            gctx.beginPath();
+
+            gctx.strokeStyle =
+                "#00f2fe";
+
+            gctx.lineWidth = 4;
+
+            graphData.forEach((val, i) => {
+
+                const x =
+                    (i / (graphData.length - 1)) * w;
+
+                const y =
+                    h - (val / 5) * h;
+
+                if (i === 0)
+                    gctx.moveTo(x, y);
+                else
+                    gctx.lineTo(x, y);
+            });
+
+            gctx.stroke();
+
+            // POINTS
+
+            graphData.forEach((val, i) => {
+
+                const x =
+                    (i / (graphData.length - 1)) * w;
+
+                const y =
+                    h - (val / 5) * h;
+
+                gctx.beginPath();
+
+                gctx.fillStyle =
+                    "#00f2fe";
+
+                gctx.arc(
+                    x,
+                    y,
+                    5,
+                    0,
+                    Math.PI * 2
+                );
+
+                gctx.fill();
+            });
+        }
+
+        // ==========================================
+        // TIMER
+        // ==========================================
+
+        function startTimer() {
+
+            totalTime =
+                parseInt(
+                    document.getElementById("timerInput").value
+                );
+
+            remainingTime = totalTime;
+
+            timerRunning = true;
+
+            graphData = [];
+            sessionHistory = [];
+
+            drawGraph();
+
+            clearInterval(timerInterval);
+
+            updateTimerUI();
+
+            timerInterval = setInterval(() => {
+
+                remainingTime--;
+
+                updateTimerUI();
+
+                if (remainingTime <= 0) {
+                    stopTimer();
+                }
+
+            }, 1000);
+        }
+
+        function stopTimer() {
+
+            timerRunning = false;
+
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+
+            stopTimer();
+
+            remainingTime = totalTime;
+
+            graphData = [];
+            sessionHistory = [];
+
+            drawGraph();
+
+            updateTimerUI();
+        }
+
+        function updateTimerUI() {
+
+            const mins =
+                String(
+                    Math.floor(remainingTime / 60)
+                ).padStart(2, '0');
+
+            const secs =
+                String(
+                    remainingTime % 60
+                ).padStart(2, '0');
+
+            timerDisplay.innerText =
+                `${mins}:${secs}`;
+
+            const progress =
+                circumference -
+                (remainingTime / totalTime) * circumference;
+
+            timerProgress.style.strokeDashoffset =
+                progress;
+        }
+
+        // ==========================================
+        // SAVE SESSION
+        // ==========================================
+
+        function saveSession() {
+
+            const session = {
+                createdAt:
+                    new Date().toISOString(),
+
+                duration:
+                    totalTime,
+
+                commands:
+                    sessionHistory
+            };
+
+            const blob = new Blob(
+                [JSON.stringify(session, null, 2)],
+                {
+                    type: "application/json"
+                }
+            );
+
+            const link =
+                document.createElement("a");
+
+            link.href =
+                URL.createObjectURL(blob);
+
+            link.download =
+                `ASD_Session_${Date.now()}.json`;
+
+            link.click();
+        }
+
+        // ==========================================
+        // INIT
+        // ==========================================
+
+        updateTimerUI();
+
+        startCamera();
+
+    </script>
+
+</body>
+
+</html>
